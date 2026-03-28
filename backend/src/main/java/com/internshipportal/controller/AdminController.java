@@ -86,7 +86,7 @@ public class AdminController {
     }
 
     // ===== Update application status =====
-    @PutMapping("/applications/{id}/status")
+    @PutMapping("/applications/{id}/status/update")
     public ResponseEntity<ApplicationResponse> updateStatus(
             @PathVariable Long id,
             @RequestBody StatusUpdateRequest request) {
