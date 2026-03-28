@@ -11,5 +11,5 @@ WORKDIR /app
 RUN addgroup -S spring && adduser -S spring -G spring
 COPY --from=builder /app/target/internship-portal-backend-*.jar app.jar
 USER spring:spring
-EXPOSE 8080
+EXPOSE 10000
 ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
