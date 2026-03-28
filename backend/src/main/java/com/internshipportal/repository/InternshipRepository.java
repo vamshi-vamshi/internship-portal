@@ -12,14 +12,14 @@ import org.springframework.stereotype.Repository;
 public interface InternshipRepository extends JpaRepository<Internship, Long> {
 
     /**
-     * Filter internships by skills (comma-separated string search),
-     * location, and minimum experience — all done at the DB level.
+     * Filter internships by skills, location, and max experience.
+     * NOTE: ORDER BY removed from JPQL — Pageable.Sort handles ordering.
+     * Having both causes a HibernateException in some versions.
      */
     @Query("SELECT i FROM Internship i WHERE " +
            "(:skills IS NULL OR LOWER(i.skills) LIKE LOWER(CONCAT('%', :skills, '%'))) AND " +
            "(:location IS NULL OR LOWER(i.location) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
-           "(:maxExperience IS NULL OR i.minExperience <= :maxExperience) " +
-           "ORDER BY i.createdAt DESC")
+           "(:maxExperience IS NULL OR i.minExperience <= :maxExperience)")
     Page<Internship> findByFilters(
         @Param("skills") String skills,
         @Param("location") String location,
@@ -28,13 +28,12 @@ public interface InternshipRepository extends JpaRepository<Internship, Long> {
     );
 
     /**
-     * Recommendation query: match by user's skills and location preference.
+     * Recommendation query — same fix applied.
      */
     @Query("SELECT i FROM Internship i WHERE " +
            "(:skills IS NULL OR LOWER(i.skills) LIKE LOWER(CONCAT('%', :skills, '%'))) AND " +
            "(:location IS NULL OR LOWER(i.location) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
-           "(:experienceYears IS NULL OR i.minExperience <= :experienceYears) " +
-           "ORDER BY i.createdAt DESC")
+           "(:experienceYears IS NULL OR i.minExperience <= :experienceYears)")
     Page<Internship> findRecommendations(
         @Param("skills") String skills,
         @Param("location") String location,

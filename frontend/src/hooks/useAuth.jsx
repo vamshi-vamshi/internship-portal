@@ -11,11 +11,12 @@ export function AuthProvider({ children }) {
     } catch { return null; }
   });
 
+  // loading is always false (auth is synchronous from localStorage on init)
   const [loading] = useState(false);
 
   const login = useCallback(async (email, password) => {
     const res = await authAPI.login({ email, password });
-    const { token, ...userData } = res.data;
+    const { token, type, ...userData } = res.data;
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
@@ -24,7 +25,7 @@ export function AuthProvider({ children }) {
 
   const adminLogin = useCallback(async (email, password) => {
     const res = await adminAuthAPI.login({ email, password });
-    const { token, ...userData } = res.data;
+    const { token, type, ...userData } = res.data;
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);

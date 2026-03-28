@@ -38,7 +38,7 @@ public class AuthController {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(User.Role.USER); // Always USER on public register
+        user.setRole(User.Role.USER);
 
         userRepository.save(user);
         logger.info("New user registered: {}", request.getEmail());
@@ -57,7 +57,6 @@ public class AuthController {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // If role is ADMIN, reject from user login endpoint
         if (user.getRole() == User.Role.ADMIN) {
             return ResponseEntity.status(403)
                     .body(new MessageResponse("Admins must login via /admin/login"));

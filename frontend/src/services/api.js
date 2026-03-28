@@ -30,20 +30,20 @@ API.interceptors.response.use(
 // ===== Auth =====
 export const authAPI = {
   register: (data) => API.post('/auth/register', data),
-  login: (data) => API.post('/auth/login', data),
+  login:    (data) => API.post('/auth/login', data),
 };
 
-// ===== Admin Auth (separate endpoint) =====
+// ===== Admin Auth =====
 export const adminAuthAPI = {
   login: (data) => API.post('/admin/auth/login', data),
 };
 
 // ===== Internships =====
 export const internshipAPI = {
-  getAll: (params) => API.get('/internships', { params }),
-  getById: (id) => API.get(`/internships/${id}`),
-  getRecommendations: (params) => API.get('/recommendations', { params }),
-  apply: (id, data) => API.post(`/internships/${id}/apply`, data),
+  getAll:            (params) => API.get('/internships', { params }),
+  getById:           (id)     => API.get(`/internships/${id}`),
+  getRecommendations:(params) => API.get('/recommendations', { params }),
+  apply:             (id, data) => API.post(`/internships/${id}/apply`, data),
 };
 
 // ===== User =====
@@ -55,17 +55,18 @@ export const userAPI = {
 export const adminAPI = {
   // Internship CRUD
   listInternships: (params) => API.get('/admin/internships', { params }),
-  create: (data) => API.post('/admin/internships', data),
-  update: (id, data) => API.put(`/admin/internships/${id}`, data),
-  delete: (id) => API.delete(`/admin/internships/${id}`),
+  create:          (data)   => API.post('/admin/internships', data),
+  update:          (id, data) => API.put(`/admin/internships/${id}`, data),
+  delete:          (id)     => API.delete(`/admin/internships/${id}`),
   // Stats & Users
-  getStats: () => API.get('/admin/stats'),
-  getAllUsers: (params) => API.get('/admin/users', { params }),
-  deleteUser: (id) => API.delete(`/admin/users/${id}`),
-  // Applicant management
-  getAllApplications: (params) => API.get('/admin/applications', { params }),
-  getApplicants: (internshipId, params) =>
+  getStats:      ()       => API.get('/admin/stats'),
+  getAllUsers:    (params) => API.get('/admin/users', { params }),
+  deleteUser:    (id)     => API.delete(`/admin/users/${id}`),
+  // Applications
+  getAllApplications:     (params) => API.get('/admin/applications', { params }),
+  getApplicants:         (internshipId, params) =>
     API.get(`/admin/internships/${internshipId}/applications`, { params }),
+  // FIXED: was /status — matches backend PUT /api/admin/applications/{id}/status
   updateApplicationStatus: (applicationId, status) =>
     API.put(`/admin/applications/${applicationId}/status`, { status }),
 };

@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -58,106 +57,99 @@ public class ChatController {
         Long userId = user.getId();
         String name = user.getName().split(" ")[0];
 
-        // === Application Status Query ===
         if (message.contains("status") || message.contains("application status")) {
             Page<Application> apps = applicationRepository.findByUserIdOrderByAppliedAtDesc(
                     userId, PageRequest.of(0, 5, Sort.by("appliedAt").descending()));
 
             if (apps.isEmpty()) {
-                return "Hi " + name + "! You haven't applied to any internships yet. Browse internships and apply now! 🚀";
+                return "Hi " + name + "! You haven't applied to any internships yet. Browse internships and apply now! \uD83D\uDE80";
             }
 
             StringBuilder sb = new StringBuilder("Hi " + name + "! Here are your recent application statuses:\n\n");
             apps.getContent().forEach(app -> {
                 String statusEmoji = switch (app.getStatus()) {
-                    case APPLIED -> "🟡 APPLIED";
-                    case SHORTLISTED -> "🟢 SHORTLISTED";
-                    case REJECTED -> "🔴 REJECTED";
+                    case APPLIED -> "\uD83D\uDFE1 APPLIED";
+                    case SHORTLISTED -> "\uD83D\uDFE2 SHORTLISTED";
+                    case REJECTED -> "\uD83D\uDD34 REJECTED";
                 };
-                sb.append("• ").append(app.getInternship().getTitle())
+                sb.append("\u2022 ").append(app.getInternship().getTitle())
                   .append(" @ ").append(app.getInternship().getCompany())
-                  .append(" → ").append(statusEmoji).append("\n");
+                  .append(" \u2192 ").append(statusEmoji).append("\n");
             });
             return sb.toString();
         }
 
-        // === Last Application Query ===
         if (message.contains("last application") || message.contains("recent application") || message.contains("latest application")) {
             Page<Application> apps = applicationRepository.findByUserIdOrderByAppliedAtDesc(
                     userId, PageRequest.of(0, 1, Sort.by("appliedAt").descending()));
 
             if (apps.isEmpty()) {
-                return "You haven't applied to any internships yet, " + name + ". Start exploring! 🔍";
+                return "You haven't applied to any internships yet, " + name + ". Start exploring! \uD83D\uDD0D";
             }
 
             Application last = apps.getContent().get(0);
             String statusEmoji = switch (last.getStatus()) {
-                case APPLIED -> "🟡 APPLIED";
-                case SHORTLISTED -> "🟢 SHORTLISTED";
-                case REJECTED -> "🔴 REJECTED";
+                case APPLIED -> "\uD83D\uDFE1 APPLIED";
+                case SHORTLISTED -> "\uD83D\uDFE2 SHORTLISTED";
+                case REJECTED -> "\uD83D\uDD34 REJECTED";
             };
             return "Your last application:\n\n" +
-                   "📋 **" + last.getInternship().getTitle() + "**\n" +
-                   "🏢 " + last.getInternship().getCompany() + "\n" +
-                   "📍 " + last.getInternship().getLocation() + "\n" +
+                   "\uD83D\uDCCB **" + last.getInternship().getTitle() + "**\n" +
+                   "\uD83C\uDFE2 " + last.getInternship().getCompany() + "\n" +
+                   "\uD83D\uDCCD " + last.getInternship().getLocation() + "\n" +
                    "Status: " + statusEmoji + "\n" +
                    "Applied: " + last.getAppliedAt().toLocalDate();
         }
 
-        // === Count Applications ===
         if (message.contains("how many") && message.contains("appl")) {
             long count = applicationRepository.countByUserId(userId);
-            return "You have applied to **" + count + "** internship" + (count == 1 ? "" : "s") + " so far, " + name + "! 🎯";
+            return "You have applied to **" + count + "** internship" + (count == 1 ? "" : "s") + " so far, " + name + "! \uD83C\uDFAF";
         }
 
-        // === Shortlisted Query ===
         if (message.contains("shortlist") || message.contains("approved") || message.contains("accepted")) {
             List<Application> shortlisted = applicationRepository.findByUserIdAndStatus(
                     userId, Application.ApplicationStatus.SHORTLISTED);
             if (shortlisted.isEmpty()) {
-                return "No shortlisted applications yet, " + name + ". Keep applying — your next one could be the one! 💪";
+                return "No shortlisted applications yet, " + name + ". Keep applying \u2014 your next one could be it! \uD83D\uDCAA";
             }
-            StringBuilder sb = new StringBuilder("🎉 Great news! You're shortlisted for:\n\n");
-            shortlisted.forEach(app -> sb.append("✅ ")
+            StringBuilder sb = new StringBuilder("\uD83C\uDF89 Great news! You're shortlisted for:\n\n");
+            shortlisted.forEach(app -> sb.append("\u2705 ")
                 .append(app.getInternship().getTitle()).append(" @ ")
                 .append(app.getInternship().getCompany()).append("\n"));
             return sb.toString();
         }
 
-        // === Rejected Query ===
         if (message.contains("reject")) {
             List<Application> rejected = applicationRepository.findByUserIdAndStatus(
                     userId, Application.ApplicationStatus.REJECTED);
             if (rejected.isEmpty()) {
-                return "No rejections! Keep going, " + name + "! 🌟";
+                return "No rejections! Keep going, " + name + "! \uD83C\uDF1F";
             }
-            return "You have " + rejected.size() + " rejected application(s). Don't give up — each rejection brings you closer to the right opportunity! 💪";
+            return "You have " + rejected.size() + " rejected application(s). Don't give up \u2014 each rejection brings you closer! \uD83D\uDCAA";
         }
 
-        // === Help / Greetings ===
         if (message.contains("hello") || message.contains("hi") || message.contains("hey")) {
-            return "Hello " + name + "! 👋 I'm your Internship Assistant. I can help you with:\n\n" +
-                   "• \"What is my application status?\"\n" +
-                   "• \"Show my last application\"\n" +
-                   "• \"How many internships have I applied to?\"\n" +
-                   "• \"Am I shortlisted anywhere?\"\n\n" +
+            return "Hello " + name + "! \uD83D\uDC4B I'm your Internship Assistant. I can help with:\n\n" +
+                   "\u2022 \"What is my application status?\"\n" +
+                   "\u2022 \"Show my last application\"\n" +
+                   "\u2022 \"How many internships have I applied to?\"\n" +
+                   "\u2022 \"Am I shortlisted anywhere?\"\n\n" +
                    "What would you like to know?";
         }
 
         if (message.contains("help")) {
             return "Here's what I can do for you, " + name + ":\n\n" +
-                   "📊 **Application Status** – Ask about your current application statuses\n" +
-                   "📋 **Last Application** – See your most recent application\n" +
-                   "🔢 **Count** – How many internships you've applied to\n" +
-                   "✅ **Shortlisted** – See where you're shortlisted\n\n" +
+                   "\uD83D\uDCCA **Application Status** \u2013 Your current statuses\n" +
+                   "\uD83D\uDCCB **Last Application** \u2013 Most recent application\n" +
+                   "\uD83D\uDD22 **Count** \u2013 Total internships applied to\n" +
+                   "\u2705 **Shortlisted** \u2013 Where you've been shortlisted\n\n" +
                    "Just type your question naturally!";
         }
 
-        // === Default ===
-        return "Hi " + name + "! I'm not sure I understood that. Try asking:\n\n" +
-               "• \"What is my application status?\"\n" +
-               "• \"Show my last application\"\n" +
-               "• \"How many applications do I have?\"\n\n" +
+        return "Hi " + name + "! I didn't quite get that. Try:\n\n" +
+               "\u2022 \"What is my application status?\"\n" +
+               "\u2022 \"Show my last application\"\n" +
+               "\u2022 \"How many applications do I have?\"\n\n" +
                "Type **help** to see all options.";
     }
 }

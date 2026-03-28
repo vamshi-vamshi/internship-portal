@@ -36,10 +36,30 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
         logger.error("Runtime exception: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+
+        // "already applied" → 409 Conflict
+        if (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("already applied")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                    "timestamp", LocalDateTime.now().toString(),
+                    "status", 409,
+                    "error", ex.getMessage()
+            ));
+        }
+
+        // "not found" → 404
+        if (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "timestamp", LocalDateTime.now().toString(),
+                    "status", 404,
+                    "error", ex.getMessage()
+            ));
+        }
+
+        // Everything else → 400 Bad Request
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                 "timestamp", LocalDateTime.now().toString(),
-                "status", 404,
-                "error", ex.getMessage()
+                "status", 400,
+                "error", ex.getMessage() != null ? ex.getMessage() : "An error occurred"
         ));
     }
 
@@ -58,6 +78,16 @@ public class GlobalExceptionHandler {
                 "timestamp", LocalDateTime.now().toString(),
                 "status", 403,
                 "error", "Access denied"
+        ));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        logger.error("Unexpected error: {}", ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "timestamp", LocalDateTime.now().toString(),
+                "status", 500,
+                "error", "Internal server error"
         ));
     }
 }

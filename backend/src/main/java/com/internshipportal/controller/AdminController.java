@@ -85,8 +85,8 @@ public class AdminController {
         return ResponseEntity.ok(applicationService.getAllApplications(page, size));
     }
 
-    // ===== Update application status =====
-    @PutMapping("/applications/{id}/status/update")
+    // ===== Update application status — FIXED: was /status/update, now /status =====
+    @PutMapping("/applications/{id}/status")
     public ResponseEntity<ApplicationResponse> updateStatus(
             @PathVariable Long id,
             @RequestBody StatusUpdateRequest request) {
@@ -103,8 +103,8 @@ public class AdminController {
         return ResponseEntity.ok(applicationService.getApplicationsByInternship(id, page, size));
     }
 
-    // ===== Count applicants =====
-    @GetMapping("/internships/{id}/applications-count")
+    // ===== Count applicants — FIXED: was /applications-count, now /applications/count =====
+    @GetMapping("/internships/{id}/applications/count")
     public ResponseEntity<Long> countApplicants(@PathVariable Long id) {
         return ResponseEntity.ok(applicationService.countApplications(id));
     }

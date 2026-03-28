@@ -2,7 +2,6 @@ package com.internshipportal.controller;
 
 import com.internshipportal.dto.ApplicationDtos.*;
 import com.internshipportal.dto.InternshipDtos.PagedResponse;
-import com.internshipportal.model.Application.ApplicationStatus;
 import com.internshipportal.repository.UserRepository;
 import com.internshipportal.service.ApplicationService;
 import jakarta.validation.Valid;
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class ApplicationController {
 
     @Autowired private ApplicationService applicationService;
-    @Autowired private UserRepository     userRepository;
+    @Autowired private UserRepository userRepository;
 
     // ========== USER: Apply to internship ==========
     @PostMapping("/api/internships/{id}/apply")
@@ -43,27 +42,6 @@ public class ApplicationController {
 
         Long userId = resolveUserId(userDetails);
         return ResponseEntity.ok(applicationService.getUserApplications(userId, page, size));
-    }
-
-    // ========== ADMIN: View applicants for internship ==========
-    @GetMapping("/api/admin/internships/{id}/applications")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PagedResponse<ApplicationResponse>> getApplicants(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-
-        return ResponseEntity.ok(applicationService.getApplicationsByInternship(id, page, size));
-    }
-
-    // ========== ADMIN: Update status ==========
-    @PutMapping("/api/admin/applications/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApplicationResponse> updateStatus(
-            @PathVariable Long id,
-            @Valid @RequestBody StatusUpdateRequest request) {
-
-        return ResponseEntity.ok(applicationService.updateStatus(id, request.getStatus()));
     }
 
     // ===== Helper =====
