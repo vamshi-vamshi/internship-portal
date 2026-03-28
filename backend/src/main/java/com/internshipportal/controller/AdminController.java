@@ -104,7 +104,7 @@ public class AdminController {
     }
 
     // ===== Count applicants =====
-    @GetMapping("/internships/{id}/applications/count")
+    @GetMapping("/internships/{id}/applications-count")
     public ResponseEntity<Long> countApplicants(@PathVariable Long id) {
         return ResponseEntity.ok(applicationService.countApplications(id));
     }
