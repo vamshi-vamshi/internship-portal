@@ -66,13 +66,6 @@ public class ApplicationController {
         return ResponseEntity.ok(applicationService.updateStatus(id, request.getStatus()));
     }
 
-    // ========== ADMIN: Count applicants for internship ==========
-    @GetMapping("/api/admin/internships/{id}/applications/count")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Long> countApplicants(@PathVariable Long id) {
-        return ResponseEntity.ok(applicationService.countApplications(id));
-    }
-
     // ===== Helper =====
     private Long resolveUserId(UserDetails userDetails) {
         return userRepository.findByEmail(userDetails.getUsername())
