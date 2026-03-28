@@ -12,4 +12,4 @@ RUN addgroup -S spring && adduser -S spring -G spring
 COPY --from=builder /app/target/internship-portal-backend-*.jar app.jar
 USER spring:spring
 EXPOSE 10000
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dserver.port=10000", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
