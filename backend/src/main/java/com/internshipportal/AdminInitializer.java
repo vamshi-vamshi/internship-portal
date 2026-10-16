@@ -28,10 +28,13 @@ public class AdminInitializer {
 
             userRepository.findByEmail(adminEmail).ifPresentOrElse(
                 user -> {
-                    if (user.getRole() != User.Role.ADMIN) {
+                    if (user.getRole() == User.Role.ADMIN) {
+                        user.setPassword(passwordEncoder.encode(adminPassword));
+                        userRepository.save(user);
+                        System.out.println("Admin password updated from configuration.");
+                    } else {
                         System.out.println(
-                            "Admin email already exists with a non-admin role. "
-                            + "No changes made.");
+                            "Admin email exists with a non-admin role. No changes made.");
                     }
                 },
                 () -> {
@@ -40,7 +43,6 @@ public class AdminInitializer {
                     admin.setEmail(adminEmail);
                     admin.setPassword(passwordEncoder.encode(adminPassword));
                     admin.setRole(User.Role.ADMIN);
-
                     userRepository.save(admin);
                     System.out.println("Initial admin account created.");
                 }
