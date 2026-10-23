@@ -4,6 +4,7 @@ package com.internshipportal.controller;
 import com.internshipportal.model.Application;
 import com.internshipportal.model.User;
 import com.internshipportal.repository.ApplicationRepository;
+import com.internshipportal.repository.InternshipRepository;
 import com.internshipportal.repository.UserRepository;
 
 import org.slf4j.Logger;
@@ -39,6 +40,9 @@ public class ChatController {
     @Autowired
     private ApplicationRepository applicationRepository;
 
+    @Autowired
+    private InternshipRepository internshipRepository;
+
     @Value("${app.ai.enabled:false}")
     private boolean aiEnabled;
 
@@ -52,10 +56,11 @@ public class ChatController {
 
         if (userDetails == null || userDetails.getUsername() == null) {
             response.put("error", "Authentication required");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(response);
         }
 
-        String message = body == null ? "" : body.getOrDefault("message", "");
+        String message = body == null ? "" : body.get("message");
         message = message == null ? "" : message.toLowerCase().trim();
 
         if (message.isEmpty()) {
@@ -64,13 +69,17 @@ public class ChatController {
         }
 
         try {
-            String email = userDetails.getUsername();
-
-            User user = userRepository.findByEmail(email)
+            User user = userRepository.findByEmail(userDetails.getUsername())
                     .orElseThrow(() ->
                             new IllegalStateException("Authenticated user not found"));
 
-            String reply = generateReply(message, user);
+            String reply;
+
+            if (user.getRole() == User.Role.ADMIN) {
+                reply = generateAdminReply(message, user);
+            } else {
+                reply = generateUserReply(message, user);
+            }
 
             response.put("reply", reply);
             response.put("type", "bot");
@@ -80,21 +89,145 @@ public class ChatController {
         } catch (Exception e) {
             logger.error("Error processing chatbot message", e);
 
-            response.put("error", "Unable to process your message right now.");
+            response.put("error",
+                    "Unable to process your message right now.");
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(response);
         }
     }
 
-    private String generateReply(String message, User user) {
-        Long userId = user.getId();
+    // ==================== ADMIN CHATBOT ====================
 
-        String fullName = user.getName();
-        String name = (fullName == null || fullName.isBlank())
-                ? "there"
-                : fullName.trim().split("\\s+")[0];
+    private String generateAdminReply(String message, User admin) {
+
+        String name = getFirstName(admin);
+
+        long totalUsers = userRepository.count();
+        long totalInternships = internshipRepository.count();
+        long totalApplications = applicationRepository.count();
+
+        long pendingApplications = applicationRepository.countByStatus(
+                Application.ApplicationStatus.APPLIED);
+
+        long shortlistedApplications = applicationRepository.countByStatus(
+                Application.ApplicationStatus.SHORTLISTED);
+
+        long rejectedApplications = applicationRepository.countByStatus(
+                Application.ApplicationStatus.REJECTED);
+
+        if (containsAny(message,
+                "hello", "hi", "hey", "good morning", "good afternoon")) {
+
+            return "Hello " + name + "! 👋 Welcome to the Admin Assistant.\n\n"
+                    + "I can help you monitor your internship portal:\n\n"
+                    + "• How many users are registered?\n"
+                    + "• How many internships are available?\n"
+                    + "• How many applications are submitted?\n"
+                    + "• How many applications are pending?\n"
+                    + "• How many students are shortlisted?\n"
+                    + "• Show dashboard statistics\n\n"
+                    + "What would you like to know?";
+        }
+
+        if (message.contains("help")) {
+            return "🛡️ Admin Assistant Commands\n\n"
+                    + "👥 Total users / Number of users\n"
+                    + "💼 Total internships / Available internships\n"
+                    + "📋 Total applications\n"
+                    + "🟡 Pending applications\n"
+                    + "🟢 Shortlisted applications\n"
+                    + "🔴 Rejected applications\n"
+                    + "📊 Dashboard statistics\n\n"
+                    + "Ask your question in natural language.";
+        }
+
+        if (containsAny(message,
+                "dashboard", "all statistics", "overall statistics",
+                "portal statistics", "summary", "everything")) {
+
+            return "📊 Internship Portal Dashboard\n\n"
+                    + "👥 Total registered users: " + totalUsers + "\n"
+                    + "💼 Total internships: " + totalInternships + "\n"
+                    + "📋 Total applications: " + totalApplications + "\n\n"
+                    + "🟡 Pending applications: " + pendingApplications + "\n"
+                    + "🟢 Shortlisted applications: "
+                    + shortlistedApplications + "\n"
+                    + "🔴 Rejected applications: " + rejectedApplications;
+        }
+
+        if (containsAny(message,
+                "user", "users", "registered", "students", "people")) {
+
+            return "👥 User Statistics\n\n"
+                    + "Total registered users: " + totalUsers + "\n\n"
+                    + "This count includes all records in the users table, "
+                    + "including the admin account.";
+        }
+
+        if (containsAny(message,
+                "internship", "internships", "openings", "positions")) {
+
+            return "💼 Internship Statistics\n\n"
+                    + "Total internships in the database: "
+                    + totalInternships + "\n\n"
+                    + "This is the total number of internship records, "
+                    + "not necessarily the number of currently open positions.";
+        }
+
+        if (containsAny(message,
+                "pending", "awaiting", "not reviewed", "not shortlisted")) {
+
+            return "🟡 Pending Applications\n\n"
+                    + "Applications with APPLIED status: "
+                    + pendingApplications + "\n\n"
+                    + "These applications have not yet been marked "
+                    + "SHORTLISTED or REJECTED.";
+        }
+
+        if (containsAny(message,
+                "shortlisted", "shortlist", "selected", "approved")) {
+
+            return "🟢 Shortlisted Applications\n\n"
+                    + "Total shortlisted applications: "
+                    + shortlistedApplications;
+        }
+
+        if (containsAny(message, "rejected", "rejection", "reject")) {
+
+            return "🔴 Rejected Applications\n\n"
+                    + "Total rejected applications: " + rejectedApplications;
+        }
+
+        if (containsAny(message,
+                "application", "applications", "applied", "submissions")) {
+
+            return "📋 Application Statistics\n\n"
+                    + "Total applications: " + totalApplications + "\n"
+                    + "🟡 Pending: " + pendingApplications + "\n"
+                    + "🟢 Shortlisted: " + shortlistedApplications + "\n"
+                    + "🔴 Rejected: " + rejectedApplications;
+        }
+
+        return "Hi " + name + "! 👋 I'm your Admin Assistant.\n\n"
+                + "Try asking:\n"
+                + "• How many users are registered?\n"
+                + "• How many internships are available?\n"
+                + "• How many applications are pending?\n"
+                + "• How many students are shortlisted?\n"
+                + "• Show dashboard statistics\n\n"
+                + "Type 'help' to see all commands.";
+    }
+
+    // ==================== NORMAL USER CHATBOT ====================
+
+    private String generateUserReply(String message, User user) {
+
+        Long userId = user.getId();
+        String name = getFirstName(user);
 
         if (message.contains("status")) {
+
             Page<Application> apps =
                     applicationRepository.findByUserIdOrderByAppliedAtDesc(
                             userId,
@@ -115,24 +248,22 @@ public class ChatController {
                             + "! Here are your recent application statuses:\n\n"
             );
 
-            apps.getContent().forEach(app -> {
-                String statusEmoji = getStatusEmoji(app.getStatus());
-
-                sb.append("• ")
-                        .append(app.getInternship().getTitle())
-                        .append(" @ ")
-                        .append(app.getInternship().getCompany())
-                        .append(" → ")
-                        .append(statusEmoji)
-                        .append("\n");
-            });
+            apps.getContent().forEach(app ->
+                    sb.append("• ")
+                            .append(app.getInternship().getTitle())
+                            .append(" @ ")
+                            .append(app.getInternship().getCompany())
+                            .append(" → ")
+                            .append(getStatusEmoji(app.getStatus()))
+                            .append("\n")
+            );
 
             return sb.toString();
         }
 
-        if (message.contains("last application")
-                || message.contains("recent application")
-                || message.contains("latest application")) {
+        if (containsAny(message,
+                "last application", "recent application",
+                "latest application")) {
 
             Page<Application> apps =
                     applicationRepository.findByUserIdOrderByAppliedAtDesc(
@@ -159,6 +290,7 @@ public class ChatController {
         }
 
         if (message.contains("how many") && message.contains("appl")) {
+
             long count = applicationRepository.countByUserId(userId);
 
             return "You have applied to **" + count + "** internship"
@@ -166,9 +298,8 @@ public class ChatController {
                     + " so far, " + name + "! 🎯";
         }
 
-        if (message.contains("shortlist")
-                || message.contains("approved")
-                || message.contains("accepted")) {
+        if (containsAny(message,
+                "shortlist", "approved", "accepted")) {
 
             List<Application> shortlisted =
                     applicationRepository.findByUserIdAndStatus(
@@ -196,7 +327,8 @@ public class ChatController {
             return sb.toString();
         }
 
-        if (message.contains("reject")) {
+        if (containsAny(message, "reject", "rejected", "rejections")) {
+
             List<Application> rejected =
                     applicationRepository.findByUserIdAndStatus(
                             userId,
@@ -212,13 +344,11 @@ public class ChatController {
                     + "each rejection brings you closer! 💪";
         }
 
-        if (message.contains("hello")
+        if (containsAny(message, "hello", "hey")
                 || message.equals("hi")
-                || message.startsWith("hi ")
-                || message.equals("hey")
-                || message.startsWith("hey ")) {
+                || message.startsWith("hi ")) {
 
-            return "Hello " + name + "! 👋 I'm your Internship Assistant. "
+            return "Hello " + name + "! 👋 I'm your Internship Assistant.\n\n"
                     + "I can help with:\n\n"
                     + "• \"What is my application status?\"\n"
                     + "• \"Show my last application\"\n"
@@ -243,6 +373,18 @@ public class ChatController {
                 + "Type **help** to see all options.";
     }
 
+    // ==================== SHARED HELPERS ====================
+
+    private String getFirstName(User user) {
+        String fullName = user.getName();
+
+        if (fullName == null || fullName.isBlank()) {
+            return user.getRole() == User.Role.ADMIN ? "Administrator" : "there";
+        }
+
+        return fullName.trim().split("\\s+")[0];
+    }
+
     private String getStatusEmoji(Application.ApplicationStatus status) {
         if (status == null) {
             return "UNKNOWN";
@@ -253,5 +395,15 @@ public class ChatController {
             case SHORTLISTED -> "🟢 SHORTLISTED";
             case REJECTED -> "🔴 REJECTED";
         };
+    }
+
+    private boolean containsAny(String message, String... keywords) {
+        for (String keyword : keywords) {
+            if (message.contains(keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
